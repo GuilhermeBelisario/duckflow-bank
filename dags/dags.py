@@ -5,7 +5,7 @@ import duckdb
 
 @dag(
     dag_id="pipeline_dados_bancarios", 
-    schedule_interval="*/1 * * * *", 
+    schedule="*/1 * * * *", 
     catchup=False
 )
 def bank_data_processing():

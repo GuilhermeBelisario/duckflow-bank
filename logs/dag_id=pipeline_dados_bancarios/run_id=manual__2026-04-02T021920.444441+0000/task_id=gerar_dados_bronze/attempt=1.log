@@ -1,0 +1,19 @@
+{"timestamp":"2026-04-02T02:19:21.812941","level":"info","event":"DAG bundles loaded: dags-folder","logger":"airflow.dag_processing.bundles.manager.DagBundlesManager"}
+{"timestamp":"2026-04-02T02:19:21.813730","level":"info","event":"Filling up the DagBag from /opt/airflow/dags/dags.py","logger":"airflow.models.dagbag.DagBag"}
+{"timestamp":"2026-04-02T02:19:22.893841","level":"info","event":"Done. Returned value was: Dados gerados na camada bronze","logger":"airflow.task.operators.airflow.providers.standard.decorators.python._PythonDecoratedOperator"}
+{"timestamp":"2026-04-02T02:19:22.894119","level":"info","event":"Pushing xcom","ti":"RuntimeTaskInstance(id=UUID('019d4bfc-ee19-73ee-b522-ea52568dd7b6'), task_id='gerar_dados_bronze', dag_id='pipeline_dados_bancarios', run_id='manual__2026-04-02T02:19:20.444441+00:00', try_number=1, map_index=-1, hostname='613574be32a9', context_carrier=None, task=<Task(_PythonDecoratedOperator): gerar_dados_bronze>, bundle_instance=LocalDagBundle(name=dags-folder), max_tries=0, start_date=datetime.datetime(2026, 4, 2, 2, 19, 21, 481374, tzinfo=TzInfo(UTC)), end_date=None, is_mapped=False)","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.688237Z","level":"info","event":"","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.688606Z","level":"info","event":"🏦 Gerador de Dados Bancários Fictícios","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.688850Z","level":"info","event":"==================================================","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.689039Z","level":"info","event":"","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.689277Z","level":"info","event":"📦 Gerando entidades base...","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.689478Z","level":"info","event":"  ✓ clientes     → data/bronze/clientes/clientes2026-04-02-02-19-22.json  (500 registros)","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.689671Z","level":"info","event":"  ✓ contas       → data/bronze/contas/contas2026-04-02-02-19-22.json  (600 registros)","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.689942Z","level":"info","event":"  ✓ cartoes      → data/bronze/cartoes/cartoes2026-04-02-02-19-22.json  (700 registros)","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.690150Z","level":"info","event":"","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.690389Z","level":"info","event":"📅 Gerando transações para 2026-04-02...","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.690628Z","level":"info","event":"  ✓ transacoes_pix    → data/bronze/transacoes_pix/transacoes_pix2026-04-02-02-19-22.json  (300 registros)","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.690896Z","level":"info","event":"  ✓ transacoes_cartao → data/bronze/transacoes_cartao/transacoes_cartao2026-04-02-02-19-22.json  (400 registros)","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.691186Z","level":"info","event":"","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.691421Z","level":"info","event":"✅ Concluído! Estrutura gerada em: /opt/airflow/data/bronze","chan":"stdout","logger":"task"}
+{"timestamp":"2026-04-02T02:19:23.691624Z","level":"info","event":"","chan":"stdout","logger":"task"}
