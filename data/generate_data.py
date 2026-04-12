@@ -25,7 +25,7 @@ random.seed(42)
 # Configuração
 # ---------------------------------------------------------------------------
 
-OUTPUT_DIR = Path("data/bronze")
+OUTPUT_DIR = Path("data/landing")
 
 N_CLIENTES = 500
 N_CONTAS = 600          # alguns clientes têm mais de uma conta

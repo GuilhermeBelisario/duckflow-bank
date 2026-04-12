@@ -11,10 +11,10 @@ import duckdb
 def bank_data_processing():
 
     @task
-    def gerar_dados_bronze():
+    def gerar_dados_landing():
         subprocess.run(["python", "data/generate_data.py"], check=True)
-        return "Dados gerados na camada bronze"
+        return "Dados gerados na camada landing"
 
-    gerar_dados_bronze()
+    gerar_dados_landing()
 
 dag_pipeline = bank_data_processing()
