@@ -15,35 +15,35 @@ def processador():
     sensor_clientes = FileSensor(
         task_id="sensor_de_arquivos_clientes",
         filepath="data/landing/clientes/*.json",
-        fs_conn_id='fs_default',
+        fs_conn_id="fs_default",
         poke_interval=30,
     )
 
     sensor_contas = FileSensor(
         task_id="sensor_de_arquivos_contas",
         filepath="data/landing/contas/*.json",
-        fs_conn_id='fs_default',
+        fs_conn_id="fs_default",
         poke_interval=30,
     )
 
     sensor_cartoes = FileSensor(
         task_id="sensor_de_arquivos_cartoes",
         filepath="data/landing/cartoes/*.json",
-        fs_conn_id='fs_default',
+        fs_conn_id="fs_default",
         poke_interval=30,
     )
 
     sensor_pix = FileSensor(
         task_id="sensor_de_arquivos_pix",
         filepath="data/landing/transacoes_pix/*.json",
-        fs_conn_id='fs_default',
+        fs_conn_id="fs_default",
         poke_interval=30,
     )
 
     sensor_transacoes_cartao = FileSensor(
         task_id="sensor_de_arquivos_transacoes_cartao",
         filepath="data/landing/transacoes_cartao/*.json",
-        fs_conn_id='fs_default',
+        fs_conn_id="fs_default",
         poke_interval=30,
     )
 
@@ -67,8 +67,12 @@ def processador():
 
                 query = f"""
                     COPY (
-                        SELECT * FROM read_json_auto('data/landing/{entidade}/*.json')
-                    ) TO 'data/bronze/{entidade}/{entidade}_bronze{(datetime.now()).strftime("%Y-%m-%d-%H-%M-%S")}.parquet' (FORMAT PARQUET, COMPRESSION ZSTD);
+                        SELECT *,
+                        current_localtimestamp() as timestamp_ingestao_bronze,
+                        '{entidade}_bank_crm' as origem_arquivo
+                        FROM read_json_auto('data/landing/{entidade}/*.json', filename = true)
+                    ) TO 'data/bronze/{entidade}/{entidade}_bronze{(datetime.now()).strftime("%Y-%m-%d-%H-%M-%S")}.parquet'
+                    (FORMAT PARQUET, COMPRESSION ZSTD);
                 """
                 con.execute(query)
 
@@ -76,7 +80,9 @@ def processador():
 
                 for arquivo in glob.glob(f"data/landing/{entidade}/*.json"):
 
-                    Path(f"{DESTINO_PROCESSADOS}/{entidade}").mkdir(parents=True, exist_ok=True)
+                    Path(f"{DESTINO_PROCESSADOS}/{entidade}").mkdir(
+                        parents=True, exist_ok=True
+                    )
                     try:
                         shutil.move(arquivo, f"{DESTINO_PROCESSADOS}/{entidade}/")
                         print(
@@ -91,16 +97,114 @@ def processador():
         return "Camada bronze (Parquet) Processada com sucesso."
 
     @task
-    def processar_silver_agregacoes():
+    def validacao_arquivos_bronze():
 
         con = duckdb.connect()
 
+        validados = []
+
+        # Criação das Pastas
         for entidade in entidades:
 
             Path(f"data/silver/{entidade}").mkdir(parents=True, exist_ok=True)
 
-            con.close()
-            return print("Arquivos padronizados!")
+            query = f"""SELECT * FROM read_parquet('data/bronze/{entidade}/*.parquet') LIMIT 1"""
+
+            df = con.query(query).fetchone()
+
+            if df:
+                validados.append(True)
+            else:
+                validados.append(False)
+
+        if all(validados):
+            return True
+        else:
+            return False
+
+    @task.skip_if(validacao_arquivos_bronze() == False)
+    def processar_silver():
+
+        con = duckdb.connect("data/silver/duckbank.duckdb")
+
+        con.execute(
+            f"""
+        MERGE INTO cartoes_cred_debt
+            USING(
+                SELECT * FROM read_parquet('data/bronze/cartoes/*.parquet')    
+            ) as bronze_table
+        ON (bronze_table.id_cartao = cartoes__cred_debt.id_cartao)
+        WHEN MATCHED THEN UPDATE
+        WHEN NOT MATCHED THEN INSERT
+        """
+        )
+
+        con.execute(
+            f"""
+        MERGE INTO clientes_cadastrados
+            USING(
+                SELECT * FROM read_parquet('data/bronze/clientes/*.parquet')    
+            ) as bronze_table
+        ON (bronze_table.id_cliente = clientes_cadastrados.id_cliente)
+        WHEN MATCHED THEN UPDATE
+        WHEN NOT MATCHED THEN INSERT
+        """
+        )
+
+        con.execute(
+            f"""
+        MERGE INTO contas_clientes
+            USING(
+                SELECT * FROM read_parquet('data/bronze/contas/*.parquet')    
+            ) as bronze_table
+        ON (bronze_table.id_conta = contas_clientes.id_conta)
+        WHEN MATCHED THEN UPDATE
+        WHEN NOT MATCHED THEN INSERT
+        """
+        )
+
+        con.execute(
+            f"""
+        MERGE INTO transacoes_cred_debt_pix
+            USING(
+                WITH transacoes_pix (
+                    SELECT 
+                        id_transacao ,
+                        id_conta_origem,
+                        id_conta_destino,
+                        valor AS valor_total_transacao,
+                        chave_pix_destino,
+                        tipo_chave AS tipo_chave_pix_destino,
+                        descricao AS descricao_pix,
+                        status,
+                        timestamp AS timestamp_transacao,
+                        data_processamento
+                    FROM read_parquet('data/bronze/transacoes_pix/*.parquet')
+                )
+                SELECT 
+                    id_transacao,
+                    id_cartao,
+                    valor_total AS valor_total_transacao,
+                    parcelas,
+                    valor_parcela,
+                    estabelecimento,
+                    categoria,
+                    cidade_estabelecimento,
+                    estado_estabelecimento,
+                    modalidade,
+                    status,
+                    timestamp AS timestamp_transacao,
+                    data_processamento
+                FROM read_parquet('data/bronze/transacoes_cartao/*.parquet')
+                UNION ALL transacoes_pix
+            ) as bronze_table
+        ON (bronze_table.id_conta = contas_clientes.id_conta)
+        WHEN NOT MATCHED THEN INSERT
+        """
+        )
+
+        con.close()
+        return print("Arquivos padronizados!")
 
     sensores = [
         sensor_clientes,
@@ -111,7 +215,11 @@ def processador():
     ]
 
     (
-        sensores >> processar_bronze_padronizados() >> processar_silver_agregacoes()
+        sensores
+        >> processar_bronze_padronizados()
+        >> validacao_arquivos_bronze()
+        >> processar_silver()
     )
-       
+
+
 dag_pipeline = processador()
