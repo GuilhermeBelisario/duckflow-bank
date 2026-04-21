@@ -1,4 +1,4 @@
-from airflow.sdk import dag, 
+from airflow.sdk import dag, task
 from pathlib import Path
 import duckdb
 
@@ -11,12 +11,12 @@ def criador_de_tabelas():
 
         resposta = False
 
-        if Path("data/silver/duckbank.duckdb").exists():
+        if Path("sql/duckbank.duckdb").exists():
             print("Database ja criado.")
             resposta = True
             return resposta 
         else:
-            con = duckdb.connect("data/silver/duckbank.duckdb")
+            con = duckdb.connect("sql/duckbank.duckdb")
 
             con.execute("CREATE TABLE sales (id INT, total FLOAT)")
 
@@ -26,12 +26,12 @@ def criador_de_tabelas():
             return resposta 
 
     @task.skip_if(criar_database() == False)
-    def criar_tabelas()
+    def criar_tabelas():
 
-        con = duckdb.connect("data/silver/duckbank.duckdb")
+        con = duckdb.connect("sql/duckbank.duckdb")
 
         try:
-            con.execute(read.sql("data/silver/sql/ddl_database.sql"))
+            con.execute(read.sql("sql/ddl_database.sql"))
         except Exception as e:
             print(e)
            

@@ -133,7 +133,7 @@ def processador():
     @task.skip_if(validacao_arquivos_bronze() == False)
     def processar_silver():
 
-        con = duckdb.connect("data/silver/duckbank.duckdb")
+        con = duckdb.connect("sql/duckbank.duckdb")
 
         con.execute(
             f"""
