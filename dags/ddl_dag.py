@@ -3,7 +3,7 @@ from pathlib import Path
 import duckdb
 
 
-@dag("ddl_dag", start_date=datetime.now(), schedule="*/1 * * * *")
+@dag("ddl_dag", start_date=datetime.now(), schedule=None)
 def criador_de_tabelas():
 
     @task

@@ -1,5 +1,6 @@
 from airflow.sdk import dag, task
 from airflow.sensors.filesystem import FileSensor
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime
 from pathlib import Path
 from utils.constants import entidades
@@ -45,6 +46,13 @@ def processador():
         filepath="data/landing/transacoes_cartao/*.json",
         fs_conn_id="fs_default",
         poke_interval=30,
+    )
+
+    trigger_ddl = TriggerDagRunOperator(
+        task_id="trigger_ddl_dag",
+        trigger_dag_id="ddl_dag",
+        wait_for_completion=True,
+        reset_dag_run=True,
     )
 
     @task
@@ -217,6 +225,7 @@ def processador():
     (
         sensores
         >> processar_bronze_padronizados()
+        >> trigger_ddl
         >> validacao_arquivos_bronze()
         >> processar_silver()
     )
